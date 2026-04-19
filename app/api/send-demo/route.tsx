@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       from: 'HeatGuard <onboarding@resend.dev>',
       to:   ['moha.decodo@gmail.com'],
       subject: `New Demo Request — ${company} (${tier})`,
-      react: DemoRequestEmail({ name, company, email, phone, teamSize, tier, date }),
+      react: <DemoRequestEmail name={name} company={company} email={email} phone={phone} teamSize={teamSize} tier={tier} date={date} />,
     })
 
     if (error) {
