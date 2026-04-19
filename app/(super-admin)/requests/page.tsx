@@ -8,6 +8,8 @@ interface PendingRequest {
   name: string
   company: string
   email: string
+  phone?: string
+  teamSize?: string
   tier: string
   date: string
 }
@@ -17,6 +19,7 @@ type RequestStatus = 'pending' | 'approved' | 'rejected'
 interface RequestRow extends PendingRequest {
   id: string
   status: RequestStatus
+  expiresAt?: number // ms timestamp — set on approval, 3 days from now
 }
 
 // Seed mock data so the panel isn't empty on first load
@@ -124,7 +127,25 @@ export default function EnterpriseRequestsPage() {
   }, [])
 
   function updateStatus(id: string, status: RequestStatus) {
-    setRows(prev => prev.map(r => r.id === id ? { ...r, status } : r))
+    setRows(prev => prev.map(r => {
+      if (r.id !== id) return r
+      const expiresAt = status === 'approved'
+        ? Date.now() + 3 * 24 * 60 * 60 * 1000 // 3 days from now
+        : undefined
+      const updated = { ...r, status, expiresAt }
+
+      // Persist approved status + expiry to localStorage so dashboard can gate access
+      try {
+        const stored: RequestRow[] = JSON.parse(localStorage.getItem('pendingRequests') ?? '[]')
+        const idx = stored.findIndex(s => s.email === r.email)
+        if (idx !== -1) {
+          stored[idx] = { ...stored[idx], status, expiresAt }
+          localStorage.setItem('pendingRequests', JSON.stringify(stored))
+        }
+      } catch { /* ignore */ }
+
+      return updated
+    }))
   }
 
   const pending  = rows.filter(r => r.status === 'pending').length
@@ -182,7 +203,9 @@ export default function EnterpriseRequestsPage() {
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Name</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Company</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Email</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Requested Tier</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Phone</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Team</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Tier</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Status</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-widest">Actions</th>
               </tr>
@@ -190,13 +213,13 @@ export default function EnterpriseRequestsPage() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-slate-400 text-sm">
+                  <td colSpan={9} className="px-5 py-10 text-center text-slate-400 text-sm">
                     Loading requests…
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-slate-400 text-sm">
+                  <td colSpan={9} className="px-5 py-10 text-center text-slate-400 text-sm">
                     No requests yet.
                   </td>
                 </tr>
@@ -217,12 +240,17 @@ export default function EnterpriseRequestsPage() {
                     </td>
 
                     <td className="px-5 py-4">
-                      <a
-                        href={`mailto:${row.email}`}
-                        className="text-blue-600 hover:underline"
-                      >
+                      <a href={`mailto:${row.email}`} className="text-blue-600 hover:underline">
                         {row.email}
                       </a>
+                    </td>
+
+                    <td className="px-5 py-4 text-slate-500 whitespace-nowrap">
+                      {row.phone ?? '—'}
+                    </td>
+
+                    <td className="px-5 py-4 text-slate-500 whitespace-nowrap">
+                      {row.teamSize ?? '—'}
                     </td>
 
                     <td className="px-5 py-4">
@@ -231,6 +259,11 @@ export default function EnterpriseRequestsPage() {
 
                     <td className="px-5 py-4">
                       <StatusBadge status={row.status} />
+                      {row.status === 'approved' && row.expiresAt && (
+                        <p className="text-[10px] text-slate-400 mt-0.5 whitespace-nowrap">
+                          Expires {formatDate(new Date(row.expiresAt).toISOString())}
+                        </p>
+                      )}
                     </td>
 
                     <td className="px-5 py-4">

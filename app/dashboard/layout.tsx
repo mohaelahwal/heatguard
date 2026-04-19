@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { DashboardSidebar } from '@/components/dashboard/sidebar'
 import { DashboardHeader }  from '@/components/dashboard/header'
 import { AIChatbot }        from '@/components/dashboard/ai-chatbot'
+import { TrialGuard }       from '@/components/dashboard/trial-guard'
 
 export const metadata: Metadata = {
   title: { default: 'Dashboard', template: '%s | HeatGuard' },
@@ -67,6 +68,9 @@ export default async function DashboardLayout({
 
       {/* Floating AI chatbot — available on all dashboard pages */}
       <AIChatbot />
+
+      {/* Silently checks trial expiry on every dashboard visit */}
+      <TrialGuard />
     </div>
   )
 }

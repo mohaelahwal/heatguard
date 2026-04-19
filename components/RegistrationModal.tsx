@@ -90,15 +90,25 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
     setStep(2)
   }
 
-  function handleSelectTier(tier: string) {
+  async function handleSelectTier(tier: string) {
+    const date  = new Date().toISOString()
     const final = { ...formData, tier }
     setFormData(final)
 
-    const existing = JSON.parse(localStorage.getItem('pendingRequests') ?? '[]') as (FormData & { date: string })[]
+    // Persist to localStorage so the Super Admin panel picks it up
+    const existing = JSON.parse(localStorage.getItem('pendingRequests') ?? '[]') as (FormData & { date: string; status: string })[]
     localStorage.setItem(
       'pendingRequests',
-      JSON.stringify([...existing, { ...final, date: new Date().toISOString() }])
+      JSON.stringify([...existing, { ...final, date, status: 'pending' }])
     )
+
+    // Fire-and-forget — advance to success step immediately; email sends in background
+    fetch('/api/send-demo', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ ...final, date }),
+    }).catch(() => { /* non-blocking — UI already progressed */ })
+
     setStep(3)
   }
 
