@@ -1,0 +1,140 @@
+@import "tw-animate-css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    /* ── HeatGuard Brand Tokens ─────────────────────────────── */
+    --brand-primary:      #00D15A;
+    --brand-forest:       #0C2A1F;
+    --brand-forest-light: #0f3728;
+    --brand-forest-border:#1a4a36;
+    --surface-page:       #F7F9F8;
+
+    /* ── shadcn / Radix CSS variables (L C H values only — tailwind.config wraps in oklch()) ─── */
+    --background:          0.982 0.005 150;   /* #F7F9F8 */
+    --foreground:          0.129 0 0;          /* #111827 */
+    --card:                1 0 0;              /* #FFFFFF */
+    --card-foreground:     0.129 0 0;
+    --popover:             1 0 0;
+    --popover-foreground:  0.129 0 0;
+    --primary:             0.748 0.225 152.5;  /* #00D15A */
+    --primary-foreground:  1 0 0;
+    --secondary:           0.97 0 0;
+    --secondary-foreground:0.205 0 0;
+    --muted:               0.97 0 0;
+    --muted-foreground:    0.556 0 0;
+    --accent:              0.97 0 0;
+    --accent-foreground:   0.205 0 0;
+    --destructive:         0.577 0.245 27.325; /* #FF3B30 */
+    --border:              0.922 0 0;          /* gray-200 */
+    --input:               0.961 0 0;
+    --ring:                0.748 0.225 152.5;  /* #00D15A */
+
+    /* Charts */
+    --chart-1: 0.748 0.225 152.5;
+    --chart-2: 0.872 0.189 91.6;
+    --chart-3: 0.683 0.211 48.3;
+    --chart-4: 0.577 0.245 27.3;
+    --chart-5: 0.627 0 0;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar:                0.185 0.058 163.2;
+    --sidebar-foreground:     0.985 0 0;
+    --sidebar-primary:        0.748 0.225 152.5;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent:         0.22 0.048 163;
+    --sidebar-accent-foreground: 1 0 0;
+    --sidebar-border:         0.27 0.06 163;
+    --sidebar-ring:           0.748 0.225 152.5;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-[#F7F9F8] text-gray-900 antialiased;
+    font-feature-settings: "tnum" on, "lnum" on;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50;
+    @apply bg-[#00D15A] text-white px-4 py-2 rounded-full text-sm font-medium;
+  }
+
+  /* Accordion animation keyframes (used by shadcn Accordion) */
+  @keyframes accordion-down {
+    from { height: 0; }
+    to   { height: var(--radix-accordion-content-height, auto); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height, auto); }
+    to   { height: 0; }
+  }
+  @keyframes collapsible-down {
+    from { height: 0; }
+    to   { height: var(--radix-collapsible-content-height, auto); }
+  }
+  @keyframes collapsible-up {
+    from { height: var(--radix-collapsible-content-height, auto); }
+    to   { height: 0; }
+  }
+  @keyframes caret-blink {
+    0%, 70%, 100% { opacity: 1; }
+    20%, 50%      { opacity: 0; }
+  }
+
+  /* Fade-in / fade-out (used by shadcn dropdowns, tooltips) */
+  @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+  /* Slide-in/out (used by Sheet, Dialog) */
+  @keyframes slide-in-from-top    { from { transform: translateY(-100%); } }
+  @keyframes slide-in-from-bottom { from { transform: translateY(100%);  } }
+  @keyframes slide-in-from-left   { from { transform: translateX(-100%); } }
+  @keyframes slide-in-from-right  { from { transform: translateX(100%);  } }
+  @keyframes slide-out-to-top     { to   { transform: translateY(-100%); } }
+  @keyframes slide-out-to-bottom  { to   { transform: translateY(100%);  } }
+  @keyframes slide-out-to-left    { to   { transform: translateX(-100%); } }
+  @keyframes slide-out-to-right   { to   { transform: translateX(100%);  } }
+}
+
+/* ── Scrollbars ────────────────────────────────────────────── */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #1a4a36 transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar       { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #1a4a36;
+    border-radius: 2px;
+  }
+
+  .scrollbar-light {
+    scrollbar-width: thin;
+    scrollbar-color: #E5E7EB transparent;
+  }
+  .scrollbar-light::-webkit-scrollbar       { width: 4px; }
+  .scrollbar-light::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-light::-webkit-scrollbar-thumb {
+    background: #E5E7EB;
+    border-radius: 2px;
+  }
+}
