@@ -91,23 +91,19 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
   }
 
   async function handleSelectTier(tier: string) {
-    const date  = new Date().toISOString()
     const final = { ...formData, tier }
     setFormData(final)
 
-    // Persist to localStorage so the Super Admin panel picks it up
-    const existing = JSON.parse(localStorage.getItem('pendingRequests') ?? '[]') as (FormData & { date: string; status: string })[]
-    localStorage.setItem(
-      'pendingRequests',
-      JSON.stringify([...existing, { ...final, date, status: 'pending' }])
-    )
-
-    // Fire-and-forget — advance to success step immediately; email sends in background
-    fetch('/api/send-demo', {
+    const res = await fetch('/api/send-demo', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ ...final, date }),
-    }).catch(() => { /* non-blocking — UI already progressed */ })
+      body:    JSON.stringify(final),
+    })
+
+    if (!res.ok) {
+      setErrors({ submit: 'Something went wrong. Please try again.' })
+      return
+    }
 
     setStep(3)
   }
@@ -354,6 +350,9 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
               <div className="text-center mb-9 mt-4">
                 <h2 className="text-3xl font-extrabold text-white tracking-tight">Choose Your Plan</h2>
                 <p className="text-white/45 text-sm mt-2">Select the tier that fits your workforce</p>
+                {errors.submit && (
+                  <p className="mt-3 text-red-400 text-sm font-medium">{errors.submit}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
