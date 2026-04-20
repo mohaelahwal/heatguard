@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react'
 import { HeatGuardLogo } from '@/components/HeatGuardLogo'
 import { loginDashboardUser, type LoginState } from '@/lib/actions/dashboard-auth'
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,11 @@ export default function LoginPage() {
   const [state, formAction]  = useFormState(loginDashboardUser, initialState)
   const [showPassword, setShowPassword] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
+  const [trialExpired, setTrialExpired] = useState(false)
+
+  useEffect(() => {
+    setTrialExpired(new URLSearchParams(window.location.search).get('expired') === 'true')
+  }, [])
 
   return (
     <div className="min-h-screen bg-[#0B281F] flex items-center justify-center p-4">
@@ -46,6 +51,19 @@ export default function LoginPage() {
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           <h2 className="text-[1.25rem] font-semibold text-gray-900 leading-tight">Welcome back</h2>
           <p className="text-gray-400 text-sm mt-1 mb-6">Sign in to your account</p>
+
+          {trialExpired && (
+            <div
+              role="alert"
+              className="mb-5 px-4 py-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3"
+            >
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-amber-800 text-sm leading-snug">
+                <span className="font-semibold">Your 3-day trial period has ended.</span>{' '}
+                Please contact sales to upgrade your account.
+              </p>
+            </div>
+          )}
 
           {state.error && (
             <div

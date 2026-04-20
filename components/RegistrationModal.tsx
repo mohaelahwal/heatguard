@@ -458,9 +458,12 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
               </div>
 
               <h2 className="text-2xl font-extrabold text-white mb-2">Request Received</h2>
-              <p className="text-white/50 text-sm leading-relaxed max-w-xs mx-auto mb-7">
+              <p className="text-white/50 text-sm leading-relaxed max-w-xs mx-auto mb-3">
                 Our enterprise team will contact{' '}
                 <span className="font-semibold text-white/80">{formData.company}</span> shortly to complete onboarding.
+              </p>
+              <p className="text-yellow-400/80 text-xs leading-relaxed max-w-xs mx-auto mb-7">
+                Note: Once approved, your login credentials will be sent via email. Please ensure to check your spam or junk folder.
               </p>
 
               <div className="bg-white/8 border border-white/10 rounded-2xl px-5 py-4 mb-7 text-left space-y-2">

@@ -4,7 +4,7 @@ import type { Database } from '@/lib/types/database'
 import type { UserRole } from '@/lib/types/database'
 
 // Routes that don't require authentication
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/register', '/auth/callback', '/api/send-demo', '/requests', '/trial-expired']
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/register', '/auth/callback', '/auth/demo-signout', '/api/send-demo', '/api/hq', '/requests', '/trial-expired']
 
 // Role-based access: which roles can access which path prefixes
 const ROLE_ACCESS: Record<string, UserRole[]> = {

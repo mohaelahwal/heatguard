@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { DashboardSidebar } from '@/components/dashboard/sidebar'
 import { DashboardHeader }  from '@/components/dashboard/header'
 import { AIChatbot }        from '@/components/dashboard/ai-chatbot'
@@ -16,12 +16,40 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Mock-auth bypass: if dashboard_session cookie is set, skip Supabase entirely
   const cookieStore = await cookies()
   const dashSession = cookieStore.get('dashboard_session')
   const isMockAuth  = dashSession?.value === 'authenticated'
 
   let headerUser = { name: null as string | null, email: null as string | null, avatar: null as string | null }
+
+  // ── Demo trial expiry check ───────────────────────────────
+  // Only runs for Supabase-authenticated demo users (not internal mock staff)
+  if (isMockAuth) {
+    const demoEmail = cookieStore.get('demo_user_email')?.value
+    if (demoEmail) {
+      const adminSupabase = createServiceClient()
+      const { data: request } = await adminSupabase
+        .from('demo_requests')
+        .select('status, expires_at, created_at')
+        .eq('email', demoEmail)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      const isExpired = request?.expires_at
+        ? new Date() > new Date(request.expires_at)
+        : false
+
+      console.log('--- EXPIRATION GUARD ---')
+      console.log('DB Request:', request)
+      console.log('Current Time:', new Date())
+      console.log('Is Expired?', isExpired)
+
+      if (!request || request.status !== 'active' || isExpired) {
+        redirect('/auth/demo-signout?reason=expired')
+      }
+    }
+  }
 
   if (!isMockAuth) {
     const supabase = await createClient()

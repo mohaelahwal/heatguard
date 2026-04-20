@@ -130,6 +130,12 @@ export default function DemoRequestsPage() {
   const [rows, setRows]       = useState<DemoRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [acting, setActing]   = useState<string | null>(null)
+  const [toast, setToast]     = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+  function showToast(type: 'success' | 'error', msg: string) {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   async function fetchRows() {
     setLoading(true)
@@ -145,17 +151,29 @@ export default function DemoRequestsPage() {
   useEffect(() => { fetchRows() }, [])
 
   async function approve(id: string) {
-    setActing(id)
-    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-    const { error } = await supabase
-      .from('demo_requests')
-      .update({ status: 'active', expires_at: expiresAt })
-      .eq('id', id)
+    const row = rows.find(r => r.id === id)
+    if (!row) return
 
-    if (!error) {
-      setRows(prev => prev.map(r =>
-        r.id === id ? { ...r, status: 'active', expires_at: expiresAt } : r
-      ))
+    setActing(id)
+    try {
+      const res = await fetch('/api/hq/approve-demo', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ id, email: row.email, name: row.name, company: row.company, tier: row.tier }),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        showToast('error', json.error ?? 'Approval failed. Please try again.')
+      } else {
+        setRows(prev => prev.map(r =>
+          r.id === id ? { ...r, status: 'active', expires_at: json.expiresAt } : r
+        ))
+        showToast('success', `Approved — welcome email sent to ${row.email}`)
+      }
+    } catch {
+      showToast('error', 'Network error. Please try again.')
     }
     setActing(null)
   }
@@ -345,6 +363,21 @@ export default function DemoRequestsPage() {
       <p className="text-center text-gray-700 text-xs">
         HeatGuard HQ · Demo Access Management
       </p>
+
+      {/* Toast notification */}
+      {toast && (
+        <div className={cn(
+          'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-semibold transition-all',
+          toast.type === 'success'
+            ? 'bg-[#00D15A] text-white'
+            : 'bg-red-500 text-white',
+        )}>
+          {toast.type === 'success'
+            ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            : <XCircle      className="w-4 h-4 flex-shrink-0" />}
+          {toast.msg}
+        </div>
+      )}
 
     </div>
   )
