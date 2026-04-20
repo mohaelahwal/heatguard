@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { render } from '@react-email/components'
 import { DemoRequestEmail } from '@/components/emails/DemoRequestEmail'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -13,11 +14,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    const emailHtml = await render(
+      <DemoRequestEmail name={name} company={company} email={email} phone={phone} teamSize={teamSize} tier={tier} date={date} />
+    )
+
     const { data, error } = await resend.emails.send({
       from: 'HeatGuard <onboarding@resend.dev>',
       to:   ['moha.decodo@gmail.com'],
       subject: `New Demo Request — ${company} (${tier})`,
-      react: <DemoRequestEmail name={name} company={company} email={email} phone={phone} teamSize={teamSize} tier={tier} date={date} />,
+      html: emailHtml,
     })
 
     if (error) {
