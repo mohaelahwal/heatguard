@@ -7,15 +7,17 @@ import {
   Building2,
   ShieldCheck,
   CreditCard,
+  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HeatGuardLogo } from '@/components/HeatGuardLogo'
 
 const NAV = [
-  { label: 'Overview',      href: '/hq',           icon: LayoutDashboard },
-  { label: 'Entities',      href: '/hq/entities',   icon: Building2 },
-  { label: 'Global Admins', href: '/hq/admins',     icon: ShieldCheck },
-  { label: 'Billing',       href: '/hq/billing',    icon: CreditCard },
+  { label: 'Overview',       href: '/hq',                  icon: LayoutDashboard },
+  { label: 'Entities',       href: '/hq/entities',          icon: Building2 },
+  { label: 'Global Admins',  href: '/hq/admins',            icon: ShieldCheck },
+  { label: 'Billing',        href: '/hq/billing',           icon: CreditCard },
+  { label: 'Demo Requests',  href: '/hq/demo-requests',     icon: ClipboardList },
 ]
 
 function AdminSidebar() {
