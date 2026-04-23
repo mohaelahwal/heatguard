@@ -14,7 +14,12 @@ const supabase = createClient(
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, company, email, phone, teamSize, tier } = body
+    const { name, company, email, phone, teamSize, tier, bot_field } = body
+
+    // Honeypot: bots fill this field, humans never see it
+    if (bot_field) {
+      return NextResponse.json({ success: true })
+    }
 
     if (!name || !company || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

@@ -17,6 +17,7 @@ interface FormData {
   teamSize: string
   challenge: string
   tier: string
+  bot_field: string
 }
 
 const FREE_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com']
@@ -27,7 +28,7 @@ function isFreemail(email: string): boolean {
 }
 
 const EMPTY_FORM: FormData = {
-  name: '', company: '', email: '', phone: '', teamSize: '', challenge: '', tier: '',
+  name: '', company: '', email: '', phone: '', teamSize: '', challenge: '', tier: '', bot_field: '',
 }
 
 const GCC_CHECKS = [
@@ -70,9 +71,12 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
     const phone     = (fd.get('phone')     as string || '').trim()
     const teamSize  = (fd.get('teamSize')  as string || '').trim()
     const challenge = (fd.get('challenge') as string || '').trim()
+    const bot_field = (fd.get('bot_field') as string || '').trim()
 
+    const NAME_RE = /^[a-zA-Z]{2,}\s[a-zA-Z]{2,}/
     const newErrors: Record<string, string> = {}
-    if (!name)      newErrors.name      = 'Full Name is required'
+    if (!name)                newErrors.name = 'Full Name is required'
+    else if (!NAME_RE.test(name)) newErrors.name = 'Please enter a valid real name (First and Last name).'
     if (!company)   newErrors.company   = 'Company Name is required'
     if (!email)     newErrors.email     = 'Company Email is required'
     else if (isFreemail(email)) newErrors.email = 'Please use a valid corporate email address'
@@ -86,7 +90,7 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
     }
 
     setErrors({})
-    setFormData(prev => ({ ...prev, name, company, email, phone, teamSize, challenge }))
+    setFormData(prev => ({ ...prev, name, company, email, phone, teamSize, challenge, bot_field }))
     setStep(2)
   }
 
@@ -255,6 +259,16 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
                     {errors.challenge && <p className="text-red-400 text-xs mt-1">{errors.challenge}</p>}
                   </div>
 
+                  {/* Honeypot — invisible to humans, filled only by bots */}
+                  <input
+                    name="bot_field"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    className="absolute opacity-0 -z-10 pointer-events-none"
+                  />
+
                   {/* Submit */}
                   <button
                     type="submit"
@@ -387,7 +401,7 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
                   </div>
                   <div className="mb-5 mt-2">
                     <p className="text-xs font-bold text-[#00D15A] uppercase tracking-widest mb-2">Tier 2 — Pro</p>
-                    <p className="text-4xl font-extrabold text-white">$18–25</p>
+                    <p className="text-4xl font-extrabold text-white">$8–10</p>
                     <p className="text-white/45 text-sm mt-1.5">per worker / month</p>
                   </div>
                   <ul className="space-y-2.5 mb-7 flex-1">
@@ -399,7 +413,7 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
                     ))}
                   </ul>
                   <button
-                    onClick={() => handleSelectTier('Pro — $18–25/worker/month')}
+                    onClick={() => handleSelectTier('Pro — $8–10/worker/month')}
                     className="w-full h-11 rounded-xl bg-[#00D15A] hover:bg-[#00c254] text-white text-sm font-bold transition-colors shadow-[0_4px_20px_rgba(0,209,90,0.35)]"
                   >
                     Request Access
@@ -410,7 +424,7 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-7 flex flex-col hover:bg-white/8 hover:border-white/20 transition-all duration-200">
                   <div className="mb-5">
                     <p className="text-xs font-bold text-white/35 uppercase tracking-widest mb-2">Tier 3 — Enterprise</p>
-                    <p className="text-4xl font-extrabold text-white">$30–45</p>
+                    <p className="text-4xl font-extrabold text-white">$12–15</p>
                     <p className="text-white/45 text-sm mt-1.5">per worker / month</p>
                   </div>
                   <ul className="space-y-2.5 mb-7 flex-1">
@@ -422,7 +436,7 @@ export function RegistrationModal({ isOpen, onClose }: Props) {
                     ))}
                   </ul>
                   <button
-                    onClick={() => handleSelectTier('Enterprise — $30–45/worker/month')}
+                    onClick={() => handleSelectTier('Enterprise — $12–15/worker/month')}
                     className="w-full h-11 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/8 transition-colors"
                   >
                     Contact Sales
