@@ -1,79 +1,61 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
+import { useChat } from '@ai-sdk/react'
 import { MessageSquare, X, Send, Bot, User, Loader2, Minimize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { UIMessage } from 'ai'
 
-/* ── Types ──────────────────────────────────────────────────────── */
-type Role = 'assistant' | 'user'
-
-interface Message {
-  id:        string
-  role:      Role
-  content:   string
-  time:      string   // static display string — avoids SSR/client hydration mismatch
-}
-
-/* ── Mock seed messages ─────────────────────────────────────────── */
-const SEED_MESSAGES: Message[] = [
+/* ── Initial greeting ───────────────────────────────────────────── */
+const INITIAL_MESSAGES: UIMessage[] = [
   {
-    id:      '1',
-    role:    'assistant',
-    content: 'Hello Mohaned! I\'m your HeatGuard AI Assistant. I can help you monitor worker safety, analyze heat stress data, and flag compliance risks. How can I help you today?',
-    time:    '9:07 AM',
-  },
-  {
-    id:      '2',
-    role:    'user',
-    content: 'Are there any workers currently at risk?',
-    time:    '9:08 AM',
-  },
-  {
-    id:      '3',
-    role:    'assistant',
-    content: '⚠️ Yes — 3 workers currently have elevated heat stress readings:\n\n• **Tarek Haddad** — WBGT 41.2°C (Zone B), last reading 4 min ago\n• **Rajesh Iyer** — Reported dizziness, heat index critical\n• **Khaled Saeed** — No check-in for 22 minutes\n\nI recommend initiating a welfare check immediately.',
-    time:    '9:08 AM',
+    id:    'seed-1',
+    role:  'assistant',
+    parts: [{ type: 'text', text: "Hello! I'm your HeatGuard AI Assistant. I can help you monitor worker safety, analyze heat stress data, and flag compliance risks. How can I help you today?" }],
   },
 ]
 
-/* ── Format time ────────────────────────────────────────────────── */
-function formatTime(): string {
-  return new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+/* ── Helpers ────────────────────────────────────────────────────── */
+function getMessageText(msg: UIMessage): string {
+  return msg.parts
+    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map(p => p.text)
+    .join('')
+}
+
+function renderContent(content: string) {
+  return {
+    __html: content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br />'),
+  }
 }
 
 /* ── Message bubble ─────────────────────────────────────────────── */
-function MessageBubble({ msg }: { msg: Message }) {
+function MessageBubble({ msg }: { msg: UIMessage }) {
   const isUser = msg.role === 'user'
+  const text   = getMessageText(msg)
+  if (!text) return null
+
   return (
     <div className={cn('flex gap-2.5 items-end', isUser && 'flex-row-reverse')}>
-      {/* Avatar */}
-      <div
-        className={cn(
-          'w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-white',
-          isUser ? 'bg-[#00D15A]' : 'bg-[#0C2A1F]'
-        )}
-      >
-        {isUser
-          ? <User className="w-3.5 h-3.5" />
-          : <Bot  className="w-3.5 h-3.5" />}
+      <div className={cn(
+        'w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-white',
+        isUser ? 'bg-[#00D15A]' : 'bg-[#0C2A1F]',
+      )}>
+        {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
       </div>
 
-      {/* Bubble */}
-      <div className={cn('max-w-[78%] flex flex-col gap-1', isUser && 'items-end')}>
+      <div className={cn('max-w-[78%]', isUser && 'flex justify-end')}>
         <div
           className={cn(
             'px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed whitespace-pre-wrap',
             isUser
               ? 'bg-[#00D15A] text-white rounded-br-sm'
-              : 'bg-[#F7F9F8] text-[#0E1B18] rounded-bl-sm border border-gray-100'
+              : 'bg-[#F7F9F8] text-[#0E1B18] rounded-bl-sm border border-gray-100',
           )}
-          dangerouslySetInnerHTML={{
-            __html: msg.content
-              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              .replace(/\n/g, '<br />'),
-          }}
+          dangerouslySetInnerHTML={renderContent(text)}
         />
-        <span suppressHydrationWarning className="text-[10px] text-gray-400 px-1">{msg.time}</span>
       </div>
     </div>
   )
@@ -97,20 +79,23 @@ function TypingIndicator() {
 
 /* ── Main component ─────────────────────────────────────────────── */
 export function AIChatbot() {
-  const [open,      setOpen]      = useState(false)
-  const [messages,  setMessages]  = useState<Message[]>(SEED_MESSAGES)
-  const [input,     setInput]     = useState('')
-  const [isTyping,  setIsTyping]  = useState(false)
-  const [unread,    setUnread]    = useState(1)
+  const [open,   setOpen]   = useState(false)
+  const [unread, setUnread] = useState(1)
+  const [input,  setInput]  = useState('')
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
 
-  // Scroll to bottom on new messages
+  const { messages, sendMessage, status } = useChat({
+    messages: INITIAL_MESSAGES,
+  })
+
+  const isLoading = status === 'submitted' || status === 'streaming'
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
+  }, [messages, isLoading])
 
-  // Focus input when opened
   useEffect(() => {
     if (open) {
       setUnread(0)
@@ -119,32 +104,10 @@ export function AIChatbot() {
   }, [open])
 
   function handleSend() {
-    const text = input.trim()
-    if (!text) return
-
-    const now = formatTime()
-    const userMsg: Message = {
-      id:      Date.now().toString(),
-      role:    'user',
-      content: text,
-      time:    now,
-    }
-
-    setMessages(prev => [...prev, userMsg])
+    const text = input?.trim()
+    if (!text || isLoading) return
     setInput('')
-    setIsTyping(true)
-
-    // Simulate AI response after delay
-    setTimeout(() => {
-      setIsTyping(false)
-      const reply: Message = {
-        id:      (Date.now() + 1).toString(),
-        role:    'assistant',
-        content: getMockReply(text),
-        time:    formatTime(),
-      }
-      setMessages(prev => [...prev, reply])
-    }, 1400)
+    sendMessage({ text })
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -153,6 +116,8 @@ export function AIChatbot() {
       handleSend()
     }
   }
+
+  const hasUserMessages = messages.some(m => m.role === 'user')
 
   return (
     <>
@@ -163,7 +128,7 @@ export function AIChatbot() {
           'flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right',
           open
             ? 'opacity-100 scale-100 pointer-events-auto'
-            : 'opacity-0 scale-95 pointer-events-none'
+            : 'opacity-0 scale-95 pointer-events-none',
         )}
         style={{ maxHeight: 'calc(100vh - 120px)', height: 520 }}
         aria-hidden={!open}
@@ -195,21 +160,21 @@ export function AIChatbot() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 scrollbar-light">
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
           {messages.map(msg => (
             <MessageBubble key={msg.id} msg={msg} />
           ))}
-          {isTyping && <TypingIndicator />}
+          {isLoading && <TypingIndicator />}
           <div ref={bottomRef} />
         </div>
 
-        {/* Suggested prompts (show only when no user messages yet) */}
-        {messages.filter(m => m.role === 'user').length === 0 && (
+        {/* Suggested prompts */}
+        {!hasUserMessages && (
           <div className="px-4 pb-2 flex gap-2 flex-wrap">
             {['Any workers at risk?', 'Show compliance gaps', 'Summarize today'].map(p => (
               <button
                 key={p}
-                onClick={() => { setInput(p); inputRef.current?.focus() }}
+                onClick={() => sendMessage({ text: p })}
                 className="px-3 py-1.5 bg-[#F7F9F8] hover:bg-gray-100 border border-gray-100 rounded-full text-[11px] text-gray-600 font-medium transition-colors"
               >
                 {p}
@@ -232,18 +197,18 @@ export function AIChatbot() {
             />
             <button
               onClick={handleSend}
-              disabled={!input.trim() || isTyping}
+              disabled={!input?.trim() || isLoading}
               aria-label="Send message"
               className={cn(
                 'w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors',
-                input.trim() && !isTyping
+                input?.trim() && !isLoading
                   ? 'bg-[#00D15A] text-white hover:bg-[#00b84f]'
-                  : 'bg-gray-100 text-gray-300'
+                  : 'bg-gray-100 text-gray-300',
               )}
             >
-              {isTyping
+              {isLoading
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                : <Send className="w-3.5 h-3.5" />}
+                : <Send    className="w-3.5 h-3.5" />}
             </button>
           </div>
           <p className="text-[10px] text-gray-400 text-center mt-2">
@@ -257,18 +222,17 @@ export function AIChatbot() {
         onClick={() => setOpen(o => !o)}
         aria-label={open ? 'Close AI Assistant' : 'Open AI Assistant'}
         className={cn(
-          'fixed bottom-5 right-5 z-50 w-13 h-13 rounded-2xl shadow-lg',
+          'fixed bottom-5 right-5 z-50 rounded-2xl shadow-lg',
           'flex items-center justify-center transition-all duration-200',
           'hover:scale-105 active:scale-95',
-          open ? 'bg-[#0C2A1F]' : 'bg-[#00D15A]'
+          open ? 'bg-[#0C2A1F]' : 'bg-[#00D15A]',
         )}
         style={{ width: 52, height: 52 }}
       >
         {open
-          ? <X className="w-5 h-5 text-white" />
+          ? <X             className="w-5 h-5 text-white" />
           : <MessageSquare className="w-5 h-5 text-white" />}
 
-        {/* Unread badge */}
         {!open && unread > 0 && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
             {unread}
@@ -277,26 +241,4 @@ export function AIChatbot() {
       </button>
     </>
   )
-}
-
-/* ── Mock reply generator ───────────────────────────────────────── */
-function getMockReply(input: string): string {
-  const q = input.toLowerCase()
-
-  if (q.includes('risk') || q.includes('danger') || q.includes('alert'))
-    return 'Based on current readings, Zone B has the highest heat index at 43.1°C. I recommend rotating workers every 45 minutes and ensuring water stations are restocked. 3 workers are currently flagged for monitoring.'
-
-  if (q.includes('compliance'))
-    return 'Current compliance score is **86%**. The 14% gap is primarily in Zone C — 4 workers missed their morning hydration check-in. I can generate a compliance report if needed.'
-
-  if (q.includes('summary') || q.includes('today'))
-    return 'Today\'s summary:\n\n• **250 / 276** workers on shift\n• **3** open incidents\n• **86%** compliance score\n• Peak WBGT: 40.5°C at 13:00\n• No critical emergencies in the last 2 hours ✓'
-
-  if (q.includes('weather') || q.includes('forecast') || q.includes('temperature'))
-    return 'Today\'s forecast shows temperatures peaking at ~43°C around 14:00–15:00 Dubai time. Expected worker efficiency will drop to ~55% during peak hours. Consider shifting heavy work to early morning.'
-
-  if (q.includes('water') || q.includes('hydration'))
-    return 'Hydration check: 18 workers have not logged a water break in the past 90 minutes. Under UAE heat safety guidelines, breaks are required every 45 minutes above 35°C. Should I send an automated reminder?'
-
-  return 'I\'m processing that request. In a live deployment, I\'d query your Supabase data in real-time to give you an accurate answer. For now, I\'m running on mock data — but the interface is fully wired for LLM integration!'
 }
