@@ -6,7 +6,7 @@ import {
   AlertTriangle, Users, List, BarChart2, MapPin, Calendar,
   MessageSquare, ShieldCheck, Stethoscope,
   BadgeCheck, Clock, AlertCircle, CheckCircle2,
-  Phone, X, MoreHorizontal, Send, Zap, Check, CheckCheck,
+  Phone, X, MoreHorizontal, Send, Zap, Check, CheckCheck, Globe,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -125,6 +125,22 @@ const INCIDENT_ICON: Record<HeatRisk, { icon: React.ElementType; cls: string }> 
   warning:  { icon: AlertCircle,  cls: 'text-orange-500' },
   danger:   { icon: AlertTriangle, cls: 'text-red-500' },
   critical: { icon: AlertTriangle, cls: 'text-red-800' },
+}
+
+const NATIONALITY_LANG: Record<string, { code: string; label: string }> = {
+  'Emirati':      { code: 'AR', label: 'Arabic' },
+  'Lebanese':     { code: 'AR', label: 'Arabic' },
+  'Egyptian':     { code: 'AR', label: 'Arabic' },
+  'Indian':       { code: 'HI', label: 'Hindi' },
+  'Pakistani':    { code: 'UR', label: 'Urdu' },
+  'Filipino':     { code: 'EN', label: 'English' },
+  'South African':{ code: 'EN', label: 'English' },
+  'Brazilian':    { code: 'PT', label: 'Portuguese' },
+  'Chinese':      { code: 'ZH', label: 'Chinese' },
+  'Japanese':     { code: 'JA', label: 'Japanese' },
+}
+function workerLang(nationality: string) {
+  return NATIONALITY_LANG[nationality] ?? { code: 'EN', label: 'English' }
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -816,8 +832,9 @@ function MessagingDialog({
   worker: Worker | null
   onClose: () => void
 }) {
-  const [msg,         setMsg]         = useState('')
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
+  const [msg,           setMsg]           = useState('')
+  const [chatHistory,   setChatHistory]   = useState<ChatMessage[]>([])
+  const [autoTranslate, setAutoTranslate] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -913,9 +930,32 @@ function MessagingDialog({
 
             {/* Quick replies */}
             <div className="px-5 pt-3 pb-2 border-t border-slate-100 bg-white">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
-                <Zap className="w-3 h-3 text-amber-400" /> Quick Replies
-              </p>
+              <div className="flex items-center mb-2.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 flex-1">
+                  <Zap className="w-3 h-3 text-amber-400" /> Quick Replies
+                </p>
+                <button
+                  onClick={() => setAutoTranslate(t => !t)}
+                  title="Auto-Translate to Worker"
+                  className="flex items-center gap-1.5 flex-shrink-0"
+                >
+                  <span className={cn(
+                    'text-[10px] font-semibold transition-colors',
+                    autoTranslate ? 'text-emerald-600' : 'text-slate-400',
+                  )}>
+                    Auto-Translate
+                  </span>
+                  <div className={cn(
+                    'relative w-8 h-4 rounded-full transition-colors duration-200',
+                    autoTranslate ? 'bg-emerald-500' : 'bg-slate-200',
+                  )}>
+                    <span className={cn(
+                      'absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all duration-200',
+                      autoTranslate ? 'left-[18px]' : 'left-0.5',
+                    )} />
+                  </div>
+                </button>
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {QUICK_REPLIES.map(qr => (
                   <button
@@ -1105,6 +1145,10 @@ function WorkerProfileSheet({
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg font-bold text-white leading-tight">{worker.name}</h2>
                   <p className="text-sm text-[#82EBAE] mt-0.5">{worker.jobTitle}</p>
+                  <p className="flex items-center gap-1 text-xs text-white/50 mt-1">
+                    <Globe className="w-3 h-3" />
+                    {workerLang(worker.nationality).label}
+                  </p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span className="font-mono text-xs bg-white/20 text-white border-transparent px-2 py-0.5 rounded">
                       {worker.badgeId}
@@ -1706,7 +1750,12 @@ function ListView({
                     {w.avatar}
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-800 leading-tight">{w.name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-slate-800 leading-tight">{w.name}</p>
+                      <span className="text-[10px] font-mono font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                        {workerLang(w.nationality).code}
+                      </span>
+                    </div>
                     <p className="text-[11px] text-slate-400 mt-0.5">
                       <span className="font-mono">{w.badgeId}</span>
                       <span className="mx-1">·</span>

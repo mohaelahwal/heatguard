@@ -114,3 +114,13 @@ const channel = supabase
 
 return () => supabase.removeChannel(channel)
 ```
+
+## Current Project State: HeatGuard Dashboard
+- **Framework:** Next.js (App Router)
+- **Database/Auth:** Supabase
+- **Key Logic:** [Briefly list 2-3 main features, e.g., Real-time heat monitoring, User alerts]
+- **API Entry Points:** All backend logic is located in `/app/api` or via Supabase client calls in `/lib`.
+
+## Android Integration Goals
+- Connect the Android app to the existing Supabase instance.
+- Mirror the dashboard logic for [Feature X].

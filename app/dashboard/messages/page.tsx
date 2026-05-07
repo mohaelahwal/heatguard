@@ -24,6 +24,7 @@ import {
   Camera,
   TriangleAlert,
   Siren,
+  Globe,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
@@ -45,6 +46,7 @@ interface Worker {
   status:   WorkerStatus
   hr:       number
   temp:     number
+  lang:     string
   unread?:  number
 }
 
@@ -86,11 +88,11 @@ const SITE_CHANNELS: Channel[] = [
 ]
 
 const DM_WORKERS: Worker[] = [
-  { id: 'w1', name: 'Rajesh Kumar',       badge: '#0047', role: 'Steel Fixer',     location: 'Zone B — Spine North', status: 'sos',     hr: 112, temp: 38.8, unread: 1 },
-  { id: 'w2', name: 'Ahmad Al-Farsi',     badge: '#0023', role: 'Site Supervisor', location: 'Zone A — Level 3',     status: 'shift',   hr: 78,  temp: 37.1 },
-  { id: 'w3', name: 'Priya Sharma',       badge: '#0055', role: 'Safety Officer',  location: 'Site Office',          status: 'shift',   hr: 82,  temp: 36.9 },
-  { id: 'w4', name: 'Carlos Mendez',      badge: '#0061', role: 'Crane Operator',  location: 'Zone C — Tower 2',     status: 'break',   hr: 69,  temp: 36.6 },
-  { id: 'w5', name: 'Mohammed Al-Rashid', badge: '#0038', role: 'Rigger',          location: 'Zone B — Spine South', status: 'offline', hr: 0,   temp: 0 },
+  { id: 'w1', name: 'Rajesh Kumar',       badge: '#0047', role: 'Steel Fixer',     location: 'Zone B — Spine North', status: 'sos',     hr: 112, temp: 38.8, lang: 'Hindi',   unread: 1 },
+  { id: 'w2', name: 'Ahmad Al-Farsi',     badge: '#0023', role: 'Site Supervisor', location: 'Zone A — Level 3',     status: 'shift',   hr: 78,  temp: 37.1, lang: 'Arabic' },
+  { id: 'w3', name: 'Priya Sharma',       badge: '#0055', role: 'Safety Officer',  location: 'Site Office',          status: 'shift',   hr: 82,  temp: 36.9, lang: 'Hindi' },
+  { id: 'w4', name: 'Carlos Mendez',      badge: '#0061', role: 'Crane Operator',  location: 'Zone C — Tower 2',     status: 'break',   hr: 69,  temp: 36.6, lang: 'Spanish' },
+  { id: 'w5', name: 'Mohammed Al-Rashid', badge: '#0038', role: 'Rigger',          location: 'Zone B — Spine South', status: 'offline', hr: 0,   temp: 0,    lang: 'Arabic' },
 ]
 
 const ACTIVE_MESSAGES: Message[] = [
@@ -408,6 +410,10 @@ function WorkerContextPanel({ worker }: { worker: Worker }) {
         <div>
           <p className="text-sm font-bold text-gray-900">{worker.name}</p>
           <p className="text-xs text-gray-400">{worker.badge} · {worker.role}</p>
+          <p className="flex items-center justify-center gap-1 text-[11px] text-gray-400 mt-1">
+            <Globe className="w-3 h-3" />
+            {worker.lang}
+          </p>
           <p className={cn('text-xs font-semibold mt-1', sl.color)}>{sl.text}</p>
         </div>
         <div className="flex items-center gap-1.5 bg-gray-50 rounded-xl px-3 py-1.5 text-xs text-gray-600 w-full justify-center">
@@ -588,6 +594,7 @@ export default function MessagesPage() {
   const [messageText,   setMessageText]   = useState('')
   const [isPriority,    setIsPriority]    = useState(false)
   const [isPTT,         setIsPTT]         = useState(false)
+  const [autoTranslate, setAutoTranslate] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const isDM           = activeDM !== null && activeChannel === ''
@@ -786,6 +793,19 @@ export default function MessagesPage() {
             <button className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors cursor-pointer">
               <Users className="w-3.5 h-3.5" />
               {isSiteAlerts ? '276 Workers' : 'Members'}
+            </button>
+            <button
+              onClick={() => setAutoTranslate(t => !t)}
+              title="Auto-Translate to Worker"
+              className={cn(
+                'flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors cursor-pointer border',
+                autoTranslate
+                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-500/30'
+                  : 'bg-gray-100 text-gray-500 border-transparent hover:bg-gray-200'
+              )}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              Auto-Translate
             </button>
           </div>
         </div>
