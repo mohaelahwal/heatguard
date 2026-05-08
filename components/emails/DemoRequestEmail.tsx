@@ -107,7 +107,7 @@ export function DemoRequestEmail({
 
             <Section style={{ textAlign: 'center' as const, marginTop: '24px' }}>
               <Button
-                href="https://heatguard-dashboard-qsgw5ooai-mohadecodo-6024s-projects.vercel.app/super-admin/requests"
+                href="https://dashboard.heatguard.ae/hq"
                 style={ctaButton}
               >
                 Review in Admin Panel →

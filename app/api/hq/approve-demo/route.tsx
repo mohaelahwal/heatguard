@@ -33,9 +33,7 @@ export async function POST(req: NextRequest) {
 
     const password  = generatePassword()
     const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-    const loginUrl  = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/login`
-      : 'https://heatguard-dashboard-qsgw5ooai-mohadecodo-6024s-projects.vercel.app/login'
+    const loginUrl = 'https://dashboard.heatguard.ae/login'
 
     // ── 1. Create (or update) Supabase Auth user ─────────────────────
     let authUserId: string | null = null
