@@ -170,15 +170,20 @@ export function AIChatbot() {
 
         {/* Suggested prompts */}
         {!hasUserMessages && (
-          <div className="px-4 pb-2 flex gap-2 flex-wrap">
+          <div className="px-4 pb-2 flex flex-col gap-2">
             {['Any workers at risk?', 'Show compliance gaps', 'Summarize today'].map(p => (
-              <button
+              <div
                 key={p}
-                onClick={() => sendMessage({ text: p })}
-                className="px-3 py-1.5 bg-[#F7F9F8] hover:bg-gray-100 border border-gray-100 rounded-full text-[11px] text-gray-600 font-medium transition-colors"
+                className="rounded-full p-[1.5px]"
+                style={{ background: 'linear-gradient(135deg, #00D15A, #00b84f, #00D15A)' }}
               >
-                {p}
-              </button>
+                <button
+                  onClick={() => sendMessage({ text: p })}
+                  className="w-full bg-white rounded-full px-4 py-2 text-[12px] text-[#00D15A] font-semibold hover:bg-[#00D15A]/5 transition-colors text-center"
+                >
+                  {p}
+                </button>
+              </div>
             ))}
           </div>
         )}
