@@ -7,7 +7,6 @@ import { DemoApprovedEmail } from '@/components/emails/DemoApprovedEmail'
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 function generatePassword(length = 12): string {
-  // Exclude ambiguous chars (0/O, 1/I/l) for readability
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
@@ -33,11 +32,21 @@ export async function POST(req: NextRequest) {
 
     const password  = generatePassword()
     const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-    const loginUrl = 'https://dashboard.heatguard.ae/login'
 
-    // ── 1. Create (or update) Supabase Auth user ─────────────────────
-    let authUserId: string | null = null
+    // ── 1. Update demo_requests to active FIRST ──────────────────────
+    // Must succeed before we do anything else — this is what gates login.
+    const { error: updateError } = await adminClient
+      .from('demo_requests')
+      .update({ status: 'active', expires_at: expiresAt })
+      .eq('id', id)
 
+    if (updateError) {
+      console.error('[approve-demo] demo_requests update failed:', updateError)
+      return NextResponse.json({ error: 'Failed to update request status' }, { status: 500 })
+    }
+
+    // ── 2. Create or reset Supabase Auth user ────────────────────────
+    // Non-fatal: if this fails after DB update, admin can re-approve to retry.
     const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -45,76 +54,41 @@ export async function POST(req: NextRequest) {
     })
 
     if (createError) {
-      console.error('[approve-demo] Supabase Auth Error:', createError)
-
       const msg = createError.message?.toLowerCase() ?? ''
       if (msg.includes('already been registered') || msg.includes('already exists')) {
-        // User exists — reset their password so the new credentials still work
-        const { data: listData, error: listError } = await adminClient.auth.admin.listUsers()
-        if (listError) {
-          console.error('[approve-demo] Supabase listUsers Error:', listError)
-        } else {
-          const existing = listData?.users?.find(u => u.email === email)
-          if (existing) {
-            authUserId = existing.id
-            const { error: updateAuthError } = await adminClient.auth.admin.updateUserById(
-              existing.id,
-              { password }
-            )
-            if (updateAuthError) {
-              console.error('[approve-demo] Supabase updateUserById Error:', updateAuthError)
-            }
+        // User already in auth — reset their password so new credentials work
+        const { data: listData } = await adminClient.auth.admin.listUsers()
+        const existing = listData?.users?.find(u => u.email === email)
+        if (existing) {
+          const { error: updateAuthError } = await adminClient.auth.admin.updateUserById(
+            existing.id,
+            { password }
+          )
+          if (updateAuthError) {
+            console.error('[approve-demo] Failed to reset password:', updateAuthError)
           }
         }
       } else {
-        // Unexpected auth error — abort so the admin knows something is wrong
-        return NextResponse.json(
-          { error: `Auth user creation failed: ${createError.message}` },
-          { status: 500 }
-        )
+        // Unexpected error — DB is already updated so log but don't abort
+        console.error('[approve-demo] Auth user creation failed:', createError)
       }
     } else {
-      authUserId = createData.user?.id ?? null
+      console.log('[approve-demo] Auth user created:', createData.user?.id)
     }
 
-    // ── 2. Update demo_requests row ──────────────────────────────────
-    const updatePayload: Record<string, unknown> = {
-      status:     'active',
-      expires_at: expiresAt,
-    }
-    if (authUserId) updatePayload.auth_user_id = authUserId
-
-    const { error: updateError } = await adminClient
-      .from('demo_requests')
-      .update(updatePayload)
-      .eq('id', id)
-
-    if (updateError) {
-      // Retry without auth_user_id in case the column doesn't exist yet
-      console.warn('[approve-demo] demo_requests update with auth_user_id failed, retrying without:', updateError)
-      const { error: fallbackError } = await adminClient
-        .from('demo_requests')
-        .update({ status: 'active', expires_at: expiresAt })
-        .eq('id', id)
-
-      if (fallbackError) {
-        console.error('[approve-demo] demo_requests fallback update failed:', fallbackError)
-        return NextResponse.json({ error: 'Failed to update request status' }, { status: 500 })
-      }
-    }
-
-    // ── 3. Send welcome email ────────────────────────────────────────
+    // ── 3. Send welcome email with credentials ───────────────────────
+    // Non-fatal: DB is already active, user can log in. Log failure for follow-up.
     const emailHtml = await render(
       <DemoApprovedEmail
         name={name}
         email={email}
         password={password}
         expiresAt={expiresAt}
-        loginUrl={loginUrl}
+        loginUrl="https://dashboard.heatguard.ae/login"
       />
     )
 
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    const { error: emailError } = await resend.emails.send({
       from:    'HeatGuard <onboarding@heatguard.ae>',
       to:      [email],
       subject: 'Your HeatGuard Demo is Ready — Login Credentials Inside',
@@ -122,14 +96,12 @@ export async function POST(req: NextRequest) {
     })
 
     if (emailError) {
-      console.error('[approve-demo] Resend Error:', emailError)
-      return NextResponse.json(
-        { error: `Email delivery failed: ${emailError.message}` },
-        { status: 500 }
-      )
+      console.error('[approve-demo] Email delivery failed (user still approved):', emailError)
+    } else {
+      console.log('[approve-demo] Welcome email sent to:', email)
     }
 
-    console.log('[approve-demo] Email sent successfully, Resend id:', emailData?.id)
+    // Always return success if DB update worked — email/auth failures are logged
     return NextResponse.json({ success: true, expiresAt })
 
   } catch (err) {
