@@ -12,6 +12,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 
+// Anon client used only for writes (tier update, decline) — reads go through /api/hq/demo-requests
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -139,12 +140,15 @@ export default function DemoRequestsPage() {
 
   async function fetchRows() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('demo_requests')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (!error && data) setRows(data as DemoRequest[])
+    try {
+      const res = await fetch('/api/hq/demo-requests')
+      if (res.ok) {
+        const data = await res.json()
+        setRows(data as DemoRequest[])
+      }
+    } catch {
+      // silently fail — table will stay empty
+    }
     setLoading(false)
   }
 
