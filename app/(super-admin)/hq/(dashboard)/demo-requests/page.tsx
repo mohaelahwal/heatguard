@@ -12,7 +12,6 @@ import {
   ChevronDown,
 } from 'lucide-react'
 
-// Used only for inline tier updates (write via RLS-authenticated path)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -140,15 +139,12 @@ export default function DemoRequestsPage() {
 
   async function fetchRows() {
     setLoading(true)
-    try {
-      const res = await fetch('/api/hq/demo-requests')
-      if (res.ok) {
-        const data = await res.json()
-        setRows(data as DemoRequest[])
-      }
-    } catch (e) {
-      console.error('Failed to fetch demo requests:', e)
-    }
+    const { data, error } = await supabase
+      .from('demo_requests')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (!error && data) setRows(data as DemoRequest[])
     setLoading(false)
   }
 
