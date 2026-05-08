@@ -171,7 +171,7 @@ export function AIChatbot() {
         {/* Suggested prompts */}
         {!hasUserMessages && (
           <div className="px-4 pb-2 flex flex-col gap-2">
-            {['Any workers at risk?', 'Show compliance gaps', 'Summarize today'].map(p => (
+            {['Any workers at risk?', 'Whose certificate or license has expired?', 'Show compliance gaps', 'Summarize today'].map(p => (
               <div
                 key={p}
                 className="rounded-full p-[1.5px]"
