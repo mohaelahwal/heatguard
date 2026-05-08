@@ -107,7 +107,7 @@ export function DemoRequestEmail({
 
             <Section style={{ textAlign: 'center' as const, marginTop: '24px' }}>
               <Button
-                href="https://dashboard.heatguard.ae/hq"
+                href="https://dashboard.heatguard.ae/hq/demo-requests"
                 style={ctaButton}
               >
                 Review in Admin Panel →

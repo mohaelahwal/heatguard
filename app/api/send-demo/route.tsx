@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     )
 
     const { error: emailError } = await resend.emails.send({
-      from:    'HeatGuard <onboarding@resend.dev>',
+      from:    'HeatGuard <onboarding@heatguard.ae>',
       to:      ['moha@heatguard.ae'],
       subject: `New Demo Request — ${company} (${tier})`,
       html:    emailHtml,
