@@ -7,7 +7,7 @@ import { DemoRequestEmail } from '@/components/emails/DemoRequestEmail'
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SITE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     const { error: emailError } = await resend.emails.send({
       from:    'HeatGuard <onboarding@resend.dev>',
-      to:      ['moha.decodo@gmail.com'],
+      to:      ['moha@heatguard.ae'],
       subject: `New Demo Request — ${company} (${tier})`,
       html:    emailHtml,
     })
