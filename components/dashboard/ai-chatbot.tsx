@@ -1,132 +1,244 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
+import { MessageSquare, X, Send, Bot, User, Loader2, Minimize2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { UIMessage } from 'ai'
 
-export function AIChatbot() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [input, setInput] = useState('')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+/* ── Initial greeting ───────────────────────────────────────────── */
+const INITIAL_MESSAGES: UIMessage[] = [
+  {
+    id:    'seed-1',
+    role:  'assistant',
+    parts: [{ type: 'text', text: "Hello! I'm your HeatGuard AI Assistant. I can help you monitor worker safety, analyze heat stress data, and flag compliance risks. How can I help you today?" }],
+  },
+]
 
-  const { messages, sendMessage, status } = useChat()
-  const isLoading = status === 'submitted' || status === 'streaming'
+/* ── Helpers ────────────────────────────────────────────────────── */
+function getMessageText(msg: UIMessage): string {
+  return msg.parts
+    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map(p => p.text)
+    .join('')
+}
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const text = input.trim()
-    if (!text || isLoading) return
-    sendMessage({ text })
-    setInput('')
+function renderContent(content: string) {
+  return {
+    __html: content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br />'),
   }
+}
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-[#00D26A] rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors z-50"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      </button>
-    )
-  }
+/* ── Message bubble ─────────────────────────────────────────────── */
+function MessageBubble({ msg }: { msg: UIMessage }) {
+  const isUser = msg.role === 'user'
+  const text   = getMessageText(msg)
+  if (!text) return null
 
   return (
-    <div className="fixed bottom-6 right-6 w-[350px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100 z-50">
-
-      {/* Header */}
-      <div className="bg-[#0B3B24] text-white p-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#00D26A] rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" />
-              <path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm">HeatGuard AI</h3>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-[#00D26A] rounded-full" />
-              <p className="text-xs text-gray-300">Online • Safety Assistant</p>
-            </div>
-          </div>
-        </div>
-        <button onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-white transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+    <div className={cn('flex gap-2.5 items-end', isUser && 'flex-row-reverse')}>
+      <div className={cn(
+        'w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-white',
+        isUser ? 'bg-[#00D15A]' : 'bg-[#0C2A1F]',
+      )}>
+        {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 h-[380px] p-4 overflow-y-auto flex flex-col gap-4 bg-gray-50">
-        {messages.length === 0 && (
-          <div className="text-center text-sm text-gray-500 mt-4 px-4">
-            Hello! I&apos;m your HeatGuard AI Assistant. I can help you monitor worker safety, analyze heat stress data, and flag compliance risks. How can I help you today?
-          </div>
-        )}
-
-        {messages.map(m => (
-          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-3 text-sm shadow-sm ${
-              m.role === 'user'
-                ? 'bg-[#00D26A] text-white rounded-2xl rounded-br-sm'
-                : 'bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-bl-sm'
-            }`}>
-              {m.parts
-                .filter(p => p.type === 'text')
-                .map((p, i) => <span key={i}>{(p as { type: 'text'; text: string }).text}</span>)
-              }
-            </div>
-          </div>
-        ))}
-
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm p-3">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
+      <div className={cn('max-w-[78%]', isUser && 'flex justify-end')}>
+        <div
+          className={cn(
+            'px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed whitespace-pre-wrap',
+            isUser
+              ? 'bg-[#00D15A] text-white rounded-br-sm'
+              : 'bg-[#F7F9F8] text-[#0E1B18] rounded-bl-sm border border-gray-100',
+          )}
+          dangerouslySetInnerHTML={renderContent(text)}
+        />
       </div>
-
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-gray-100">
-        <div className="relative flex items-center">
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Ask about workers, alerts, compliance..."
-            className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#00D26A] focus:ring-1 focus:ring-[#00D26A] transition-all"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="absolute right-2 p-2 text-gray-400 hover:text-[#00D26A] disabled:opacity-50 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-          </button>
-        </div>
-        <div className="text-[10px] text-center text-gray-400 mt-2">
-          AI responses are illustrative. Verify critical decisions with live data.
-        </div>
-      </form>
-
     </div>
   )
 }
 
-export default AIChatbot
+/* ── Typing indicator ───────────────────────────────────────────── */
+function TypingIndicator() {
+  return (
+    <div className="flex gap-2.5 items-end">
+      <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center bg-[#0C2A1F] text-white">
+        <Bot className="w-3.5 h-3.5" />
+      </div>
+      <div className="bg-[#F7F9F8] border border-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 items-center">
+        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]"   />
+        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+      </div>
+    </div>
+  )
+}
+
+/* ── Main component ─────────────────────────────────────────────── */
+export function AIChatbot() {
+  const [open,   setOpen]   = useState(false)
+  const [unread, setUnread] = useState(1)
+  const [input,  setInput]  = useState('')
+
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef  = useRef<HTMLInputElement>(null)
+
+  const { messages, sendMessage, status } = useChat({
+    messages: INITIAL_MESSAGES,
+  })
+
+  const isLoading = status === 'submitted' || status === 'streaming'
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isLoading])
+
+  useEffect(() => {
+    if (open) {
+      setUnread(0)
+      setTimeout(() => inputRef.current?.focus(), 150)
+    }
+  }, [open])
+
+  function handleSend() {
+    const text = input?.trim()
+    if (!text || isLoading) return
+    setInput('')
+    sendMessage({ text })
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  const hasUserMessages = messages.some(m => m.role === 'user')
+
+  return (
+    <>
+      {/* ── Floating window ───────────────────────────────────────── */}
+      <div
+        className={cn(
+          'fixed bottom-20 right-5 z-50 w-[360px] bg-white rounded-3xl shadow-2xl border border-gray-100',
+          'flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right',
+          open
+            ? 'opacity-100 scale-100 pointer-events-auto'
+            : 'opacity-0 scale-95 pointer-events-none',
+        )}
+        style={{ maxHeight: 'calc(100vh - 120px)', height: 520 }}
+        aria-hidden={!open}
+        role="dialog"
+        aria-label="HeatGuard AI Assistant"
+      >
+        {/* Header */}
+        <div
+          className="flex items-center gap-3 px-4 py-3.5 shrink-0"
+          style={{ backgroundColor: '#0C2A1F' }}
+        >
+          <div className="w-8 h-8 rounded-full bg-[#00D15A] flex items-center justify-center shrink-0">
+            <Bot className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-white leading-none">HeatGuard AI</p>
+            <p className="text-[11px] text-[#00D15A] mt-0.5 leading-none flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-[#00D15A] rounded-full animate-pulse inline-block" />
+              Online · Safety Assistant
+            </p>
+          </div>
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close chat"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <Minimize2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+          {messages.map(msg => (
+            <MessageBubble key={msg.id} msg={msg} />
+          ))}
+          {isLoading && <TypingIndicator />}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Suggested prompts */}
+        {!hasUserMessages && (
+          <div className="px-4 pb-2 flex gap-2 flex-wrap">
+            {['Any workers at risk?', 'Show compliance gaps', 'Summarize today'].map(p => (
+              <button
+                key={p}
+                onClick={() => sendMessage({ text: p })}
+                className="px-3 py-1.5 bg-[#F7F9F8] hover:bg-gray-100 border border-gray-100 rounded-full text-[11px] text-gray-600 font-medium transition-colors"
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Input */}
+        <div className="px-4 pb-4 pt-2 shrink-0 border-t border-gray-50">
+          <div className="flex items-center gap-2 bg-[#F7F9F8] rounded-2xl px-3.5 py-2 border border-gray-100">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about workers, alerts, compliance…"
+              className="flex-1 bg-transparent text-[13px] text-gray-800 placeholder:text-gray-400 outline-none"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input?.trim() || isLoading}
+              aria-label="Send message"
+              className={cn(
+                'w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors',
+                input?.trim() && !isLoading
+                  ? 'bg-[#00D15A] text-white hover:bg-[#00b84f]'
+                  : 'bg-gray-100 text-gray-300',
+              )}
+            >
+              {isLoading
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Send    className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-400 text-center mt-2">
+            AI responses are illustrative. Verify critical decisions with live data.
+          </p>
+        </div>
+      </div>
+
+      {/* ── FAB button ─────────────────────────────────────────────── */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label={open ? 'Close AI Assistant' : 'Open AI Assistant'}
+        className={cn(
+          'fixed bottom-5 right-5 z-50 rounded-2xl shadow-lg',
+          'flex items-center justify-center transition-all duration-200',
+          'hover:scale-105 active:scale-95',
+          open ? 'bg-[#0C2A1F]' : 'bg-[#00D15A]',
+        )}
+        style={{ width: 52, height: 52 }}
+      >
+        {open
+          ? <X             className="w-5 h-5 text-white" />
+          : <MessageSquare className="w-5 h-5 text-white" />}
+
+        {!open && unread > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            {unread}
+          </span>
+        )}
+      </button>
+    </>
+  )
+}
