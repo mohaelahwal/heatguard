@@ -179,7 +179,7 @@ export function AIChatbot() {
               >
                 <button
                   onClick={() => sendMessage({ text: p })}
-                  className="w-full bg-white rounded-full px-4 py-2 text-[12px] text-[#00D15A] font-semibold hover:bg-[#00D15A]/5 transition-colors text-center"
+                  className="w-full bg-white rounded-full px-4 py-2 text-[12px] text-[#00D15A] font-semibold hover:bg-[#00D15A] hover:text-white transition-colors text-center"
                 >
                   {p}
                 </button>
