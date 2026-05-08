@@ -1,83 +1,63 @@
 import { openai } from '@ai-sdk/openai'
 import { streamText, convertToModelMessages } from 'ai'
-import { createClient } from '@supabase/supabase-js'
 import type { UIMessage } from 'ai'
 
 export const maxDuration = 30
 
-async function fetchDashboardContext(): Promise<string> {
-  try {
-    const admin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+// ── Dashboard snapshot (mirrors the hardcoded data shown in the UI) ──────────
+// When the dashboard is wired to live Supabase data, update this function.
+function buildDashboardContext(): string {
+  return `
+=== LIVE HEATGUARD DASHBOARD SNAPSHOT ===
+Site: Palm Jebel Ali · Real-time monitoring
 
-    const [workersRes, alertsRes, readingsRes] = await Promise.all([
-      admin.from('worker_status').select('status, current_heat_index'),
-      admin.from('alerts').select('severity, message, created_at').is('resolved_at', null).order('created_at', { ascending: false }).limit(10),
-      admin.from('heat_readings').select('temperature, humidity, heat_index, recorded_at').order('recorded_at', { ascending: false }).limit(20),
-    ])
+WORKFORCE SUMMARY:
+- Total registered workers: 276
+- Active on shift: 250
+- On shift (live): 204
+- On break: 34
+- In alert / at risk: 24
+- Open incidents: 3
 
-    const workers    = workersRes.data  ?? []
-    const alerts     = alertsRes.data   ?? []
-    const readings   = readingsRes.data ?? []
+HEAT & ENVIRONMENT:
+- WBGT (Wet Bulb Globe Temp): 40.5°C — WARNING level
+- Humidity: 68%
+- AQI: 72 (Moderate)
 
-    const onShift  = workers.filter(w => w.status === 'active').length
-    const onBreak  = workers.filter(w => w.status === 'break').length
-    const atRisk   = workers.filter(w => w.status === 'alert').length
-    const total    = workers.length
+OPEN INCIDENTS (requires action):
+1. INC-001 · George Adam (GA-0203) · Zone B-4
+   Type: Heat Exhaustion | Severity: CRITICAL | Time: 09:12 | Status: Pending
 
-    const heatValues    = workers.map(w => w.current_heat_index).filter(Boolean) as number[]
-    const avgHeat       = heatValues.length ? (heatValues.reduce((a, b) => a + b, 0) / heatValues.length).toFixed(1) : 'N/A'
-    const maxHeat       = heatValues.length ? Math.max(...heatValues).toFixed(1) : 'N/A'
+2. INC-002 · Vinay Barad (VB-0144) · Zone A-2
+   Type: Dizziness Reported | Severity: HIGH | Time: 09:34 | Status: Under Review
 
-    const latestReading = readings[0]
-    const recentWBGT    = latestReading ? `${latestReading.heat_index ?? latestReading.temperature}°C` : 'N/A'
-    const recentHumidity = latestReading?.humidity ? `${latestReading.humidity}%` : 'N/A'
+3. INC-003 · Indira Comar (IC-0089) · Zone C-1
+   Type: High Heat Index | Severity: WARNING | Time: 09:51 | Status: Monitoring
 
-    const criticalAlerts = alerts.filter(a => a.severity === 'critical')
-    const highAlerts     = alerts.filter(a => a.severity === 'high')
+ACTIVE ALERTS (latest):
+- Khaled Saeed (KS-0077) · Critical · 8 min ago
+- Rajesh Iyer (RI-0118) · Heat Danger · 5 min ago
+- Tarek Haddad (TH-0042) · Heat Warning · 2 min ago
 
-    const alertSummary = alerts.slice(0, 5).map(a =>
-      `- [${a.severity.toUpperCase()}] ${a.message} (${new Date(a.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })})`
-    ).join('\n')
-
-    return `
-=== LIVE HEATGUARD DASHBOARD DATA (as of ${new Date().toISOString()}) ===
-
-WORKFORCE:
-- Total workers: ${total}
-- On shift (active): ${onShift}
-- On break: ${onBreak}
-- At risk / in alert: ${atRisk}
-
-HEAT READINGS:
-- Latest WBGT: ${recentWBGT}
-- Latest humidity: ${recentHumidity}
-- Average heat index across workers: ${avgHeat}°C
-- Highest heat index recorded: ${maxHeat}°C
-
-ACTIVE ALERTS (unresolved): ${alerts.length} total — ${criticalAlerts.length} critical, ${highAlerts.length} high
-${alertSummary || '- No active alerts'}
-
-=== END OF LIVE DATA ===
+COMPLIANCE: 91.4% (target: 90%) ✓ On track
+=== END SNAPSHOT ===
 `.trim()
-  } catch (err) {
-    console.error('[chat] Failed to fetch dashboard context:', err)
-    return ''
-  }
 }
 
 export async function POST(req: Request) {
   try {
     const { messages }: { messages: UIMessage[] } = await req.json()
 
-    const liveContext = await fetchDashboardContext()
+    const systemPrompt = `You are HeatGuard AI, the built-in safety intelligence assistant for HSE managers at HeatGuard. You have direct access to the live dashboard data shown below.
 
-    const systemPrompt = `You are HeatGuard AI, an expert workplace heat safety assistant for HSE managers in the UAE. Answer concisely and professionally using the live data provided below. Never ask the manager for data that is already in the live dashboard — use it directly in your answer.
+Rules:
+- NEVER ask the manager to provide data that is already in the snapshot — use it directly.
+- Give specific names, badge numbers, zones, and severity levels from the data.
+- Be concise and action-oriented. Lead with the most critical information.
+- If asked about workers at risk, reference the exact workers from the snapshot.
+- If you don't know something not in the snapshot, say so clearly.
 
-${liveContext}`
+${buildDashboardContext()}`
 
     const result = await streamText({
       model: openai('gpt-4o-mini'),
