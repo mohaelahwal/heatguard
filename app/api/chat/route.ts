@@ -9,8 +9,9 @@ export async function POST(req: Request) {
     const { messages }: { messages: UIMessage[] } = await req.json()
 
     const result = await streamText({
-      model: google('gemini-1.5-flash'),
+      model: google('gemini-2.0-flash'),
       system: 'You are HeatGuard AI, an expert workplace heat safety assistant for HSE managers in the UAE. Keep your answers concise, professional, and focused on worker safety, hydration, and WBGT monitoring.',
+      // eslint-disable-next-line @typescript-eslint/await-thenable
       messages: await convertToModelMessages(messages),
     })
 
