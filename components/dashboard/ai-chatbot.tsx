@@ -79,9 +79,10 @@ function TypingIndicator() {
 
 /* ── Main component ─────────────────────────────────────────────── */
 export function AIChatbot() {
-  const [open,   setOpen]   = useState(false)
-  const [unread, setUnread] = useState(1)
-  const [input,  setInput]  = useState('')
+  const [open,    setOpen]    = useState(false)
+  const [unread,  setUnread]  = useState(1)
+  const [input,   setInput]   = useState('')
+  const [tooltip, setTooltip] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
@@ -92,6 +93,23 @@ export function AIChatbot() {
 
   const isLoading = status === 'submitted' || status === 'streaming'
 
+  // Show tooltip once per session
+  useEffect(() => {
+    if (!sessionStorage.getItem('hg_tooltip_shown')) {
+      const show = setTimeout(() => setTooltip(true), 800)
+      const hide = setTimeout(() => {
+        setTooltip(false)
+        sessionStorage.setItem('hg_tooltip_shown', '1')
+      }, 6000)
+      return () => { clearTimeout(show); clearTimeout(hide) }
+    }
+  }, [])
+
+  function dismissTooltip() {
+    setTooltip(false)
+    sessionStorage.setItem('hg_tooltip_shown', '1')
+  }
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
@@ -99,6 +117,7 @@ export function AIChatbot() {
   useEffect(() => {
     if (open) {
       setUnread(0)
+      dismissTooltip()
       setTimeout(() => inputRef.current?.focus(), 150)
     }
   }, [open])
@@ -219,6 +238,23 @@ export function AIChatbot() {
           <p className="text-[10px] text-gray-400 text-center mt-2">
             AI responses are illustrative. Verify critical decisions with live data.
           </p>
+        </div>
+      </div>
+
+      {/* ── Tooltip bubble ─────────────────────────────────────────── */}
+      <div
+        className={cn(
+          'fixed bottom-[78px] right-5 z-50 transition-all duration-300 origin-bottom-right',
+          tooltip ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none',
+        )}
+      >
+        <div
+          className="relative bg-[#E8F9EF] text-[#0C2A1F] text-[13px] font-medium leading-snug px-4 py-3 rounded-2xl rounded-br-sm shadow-lg max-w-[200px] cursor-pointer"
+          onClick={dismissTooltip}
+        >
+          Welcome back!<br />How may I help you today?
+          {/* tail */}
+          <span className="absolute -bottom-2 right-4 w-0 h-0 border-l-[8px] border-l-transparent border-t-[8px] border-t-[#E8F9EF]" />
         </div>
       </div>
 
