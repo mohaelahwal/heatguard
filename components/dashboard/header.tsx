@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search, Bell, AlignJustify, LogOut, Loader2,
   User, Shield, History, Timer, BookOpen, LifeBuoy, ChevronDown,
   Thermometer, AlertTriangle, Droplets, MessageSquare, Wifi,
-  MapPin, FileText, Users, Check,
+  MapPin, FileText, Users, Check, X, Building2,
 } from 'lucide-react'
 import Link from 'next/link'
+import { searchIndex, type SearchItem } from '@/lib/search-index'
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -113,8 +114,50 @@ interface HeaderUser {
 export function DashboardHeader({ user }: { user?: HeaderUser }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [query, setQuery] = useState('')
+  const [query,         setQuery]         = useState('')
+  const [showResults,   setShowResults]   = useState(false)
+  const [activeIndex,   setActiveIndex]   = useState(-1)
   const [isClockModalOpen, setIsClockModalOpen] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+
+  const results = searchIndex(query)
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowResults(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const handleQueryChange = useCallback((val: string) => {
+    setQuery(val)
+    setActiveIndex(-1)
+    setShowResults(val.length > 0)
+  }, [])
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!showResults) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, results.length - 1)) }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, -1)) }
+    if (e.key === 'Escape')    { setShowResults(false); setActiveIndex(-1) }
+    if (e.key === 'Enter' && activeIndex >= 0) {
+      router.push(results[activeIndex].href)
+      setQuery(''); setShowResults(false); setActiveIndex(-1)
+    }
+  }
+
+  function handleResultClick(item: SearchItem) {
+    router.push(item.href)
+    setQuery(''); setShowResults(false); setActiveIndex(-1)
+  }
+
+  function clearSearch() {
+    setQuery(''); setShowResults(false); setActiveIndex(-1)
+  }
   const [notifs, setNotifs] = useState<Notif[]>(INITIAL_NOTIFS)
 
   const unreadCount = notifs.filter(n => n.unread).length
@@ -151,20 +194,83 @@ export function DashboardHeader({ user }: { user?: HeaderUser }) {
 
       {/* Search */}
       <div className="flex-1 flex justify-center">
-        <div className="relative w-full max-w-md lg:max-w-lg">
+        <div ref={searchRef} className="relative w-full max-w-md lg:max-w-lg">
           <input
-            type="search"
+            type="text"
             value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search Site, Employee ID, Claim #"
+            onChange={e => handleQueryChange(e.target.value)}
+            onFocus={() => query.length > 0 && setShowResults(true)}
+            onKeyDown={handleKeyDown}
+            placeholder="Search worker, badge ID, zone, incident…"
             className="w-full h-9 pl-4 pr-12 rounded-full text-[13px] text-white/90 placeholder:text-white/40 bg-white/10 border border-white/15 outline-none focus:border-white/30 focus:bg-white/15 transition-colors"
           />
-          <button
-            aria-label="Search"
-            className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#00D15A] rounded-full flex items-center justify-center hover:bg-[#00b84f] transition-colors"
-          >
-            <Search className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
-          </button>
+          {query ? (
+            <button
+              onClick={clearSearch}
+              aria-label="Clear search"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+            >
+              <X className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+            </button>
+          ) : (
+            <button
+              aria-label="Search"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#00D15A] rounded-full flex items-center justify-center hover:bg-[#00b84f] transition-colors"
+            >
+              <Search className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* Results dropdown */}
+          {showResults && (
+            <div className="absolute top-11 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+              {results.length === 0 ? (
+                <p className="px-4 py-4 text-[13px] text-gray-400 text-center">No results for &ldquo;{query}&rdquo;</p>
+              ) : (
+                <ul>
+                  {results.map((item, i) => {
+                    const isActive = i === activeIndex
+                    return (
+                      <li key={`${item.type}-${item.title}`}>
+                        <button
+                          onMouseDown={() => handleResultClick(item)}
+                          onMouseEnter={() => setActiveIndex(i)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-gray-50 last:border-0 ${isActive ? 'bg-[#E8F9EF]' : 'hover:bg-gray-50'}`}
+                        >
+                          {/* Type icon */}
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                            item.type === 'worker'   ? 'bg-[#00D15A]/10' :
+                            item.type === 'incident' ? 'bg-red-50' :
+                            'bg-blue-50'
+                          }`}>
+                            {item.type === 'worker'   && <User          className="w-4 h-4 text-[#00D15A]" />}
+                            {item.type === 'incident' && <AlertTriangle className="w-4 h-4 text-red-500" />}
+                            {item.type === 'site'     && <Building2     className="w-4 h-4 text-blue-500" />}
+                          </div>
+                          {/* Text */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold text-gray-900 truncate">{item.title}</p>
+                            <p className="text-[11px] text-gray-400 truncate">{item.subtitle}</p>
+                          </div>
+                          {/* Type label */}
+                          <span className={`text-[10px] font-bold uppercase tracking-wide shrink-0 ${
+                            item.type === 'worker'   ? 'text-[#00D15A]' :
+                            item.type === 'incident' ? 'text-red-400' :
+                            'text-blue-400'
+                          }`}>
+                            {item.type}
+                          </span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+              <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
+                <p className="text-[10px] text-gray-400">↑↓ navigate &nbsp;·&nbsp; Enter to open &nbsp;·&nbsp; Esc to close</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
