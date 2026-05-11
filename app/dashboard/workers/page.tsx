@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   ChevronDown, ChevronRight, ChevronLeft,
   AlertTriangle, Users, List, BarChart2, MapPin, Calendar,
@@ -1837,7 +1838,8 @@ function ListView({
 /* ══════════════════════════════════════════════════════════════════
    PAGE
 ══════════════════════════════════════════════════════════════════ */
-export default function WorkersPage() {
+function WorkersPageInner() {
+  const searchParams = useSearchParams()
   const [view,            setView]           = useState<'timeline' | 'list'>('timeline')
   const [collapsed,       setCollapsed]      = useState<Set<string>>(new Set())
   const [dateOffset,      setDateOffset]     = useState(0)
@@ -1849,6 +1851,15 @@ export default function WorkersPage() {
     setProfileTab(tab)
     setSelectedWorker(w)
   }
+
+  // Auto-open worker profile when navigated from search (?worker=HG-0541)
+  useEffect(() => {
+    const badgeId = searchParams.get('worker')
+    if (!badgeId) return
+    const allWorkers = SITES.flatMap(s => s.crews.flatMap(c => c.workers))
+    const match = allWorkers.find(w => w.badgeId.toLowerCase() === badgeId.toLowerCase())
+    if (match) openProfile(match)
+  }, [searchParams])
   function openMessage(w: Worker) {
     setMessagingWorker(w)
   }
@@ -1990,5 +2001,13 @@ export default function WorkersPage() {
         onClose={() => setMessagingWorker(null)}
       />
     </div>
+  )
+}
+
+export default function WorkersPage() {
+  return (
+    <Suspense>
+      <WorkersPageInner />
+    </Suspense>
   )
 }
