@@ -39,7 +39,7 @@ interface ShiftBlock {
   type:         'working' | 'break'
   hasIncident?: boolean
 }
-interface Certification { label: string; status: 'valid' | 'expired' | 'pending' }
+interface Certification { label: string; status: 'valid' | 'expired' | 'pending'; expiresAt?: string }
 interface Incident {
   date: string; type: string; severity: HeatRisk
   note: string; resolution: string
@@ -168,10 +168,10 @@ const SITES: Site[] = [
               { start: 12.0, end: 14.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'OSHA 30-Hour', status: 'valid' },
-              { label: 'Steel Erection Cert', status: 'valid' },
-              { label: 'First Aid/CPR', status: 'expired' },
+              { label: 'Emirates ID',        status: 'valid',   expiresAt: '15 Mar 2027' },
+              { label: 'OSHA 30-Hour',       status: 'valid',   expiresAt: '01 Jun 2026' },
+              { label: 'Steel Erection Cert',status: 'valid',   expiresAt: '01 Sep 2026' },
+              { label: 'First Aid/CPR',      status: 'expired', expiresAt: '15 Jan 2026' },
             ],
             medical: 'Clearance: Fit for Heavy Labour.\nAllergies: None.\nPre-existing: Mild hypertension (managed). Prev. heat exhaustion Jul 2023.',
             upcomingShifts: [
@@ -207,9 +207,9 @@ const SITES: Site[] = [
               { start: 10.5, end: 14.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Scaffold Erection L3', status: 'valid' },
-              { label: 'Working at Height', status: 'valid' },
+              { label: 'Emirates ID',         status: 'valid', expiresAt: '20 Nov 2026' },
+              { label: 'Scaffold Erection L3', status: 'valid', expiresAt: '15 Aug 2026' },
+              { label: 'Working at Height',   status: 'valid', expiresAt: '15 Aug 2026' },
             ],
             medical: 'Clearance: Fit for Heavy Labour.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -234,9 +234,9 @@ const SITES: Site[] = [
             shift: 'off_site', heatRisk: 'safe', heatIndex: 26.0, lastCheckin: '3 hr ago',
             schedule: [],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Heavy Machinery Licence', status: 'valid' },
-              { label: 'Crane Operator Cert', status: 'valid' },
+              { label: 'Emirates ID',            status: 'valid', expiresAt: '10 Sep 2027' },
+              { label: 'Heavy Machinery Licence', status: 'valid', expiresAt: '01 Dec 2026' },
+              { label: 'Crane Operator Cert',    status: 'valid', expiresAt: '01 Dec 2026' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -266,9 +266,9 @@ const SITES: Site[] = [
               { start: 12.1, end: 12.5, type: 'break' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Concrete Finisher Cert', status: 'valid' },
-              { label: 'First Aid/CPR', status: 'valid' },
+              { label: 'Emirates ID',           status: 'valid', expiresAt: '05 Jan 2027' },
+              { label: 'Concrete Finisher Cert', status: 'valid', expiresAt: '20 Jul 2026' },
+              { label: 'First Aid/CPR',         status: 'valid', expiresAt: '20 Jul 2026' },
             ],
             medical: 'Clearance: Fit for Labour.\nAllergies: None.\nPre-existing: Asthma (inhaler required on site).',
             upcomingShifts: [
@@ -301,9 +301,9 @@ const SITES: Site[] = [
               { start: 11.0, end: 14.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Electrical Installation Cert', status: 'valid' },
-              { label: 'OSHA 10-Hour', status: 'valid' },
+              { label: 'Emirates ID',                 status: 'valid', expiresAt: '25 May 2027' },
+              { label: 'Electrical Installation Cert', status: 'valid', expiresAt: '10 Oct 2026' },
+              { label: 'OSHA 10-Hour',                status: 'valid', expiresAt: '10 Oct 2026' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -330,8 +330,8 @@ const SITES: Site[] = [
               { start: 10.5, end: 14.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Rebar / Bar Bending Cert', status: 'valid' },
+              { label: 'Emirates ID',           status: 'valid', expiresAt: '12 Feb 2027' },
+              { label: 'Rebar / Bar Bending Cert', status: 'valid', expiresAt: '20 Aug 2026' },
             ],
             medical: 'Clearance: Fit for Heavy Labour.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -362,10 +362,10 @@ const SITES: Site[] = [
               { start: 10.25, end: 14.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Tower Crane Operator', status: 'valid' },
-              { label: 'OSHA 30-Hour', status: 'valid' },
-              { label: 'Medical Fitness', status: 'valid' },
+              { label: 'Emirates ID',         status: 'valid', expiresAt: '30 Aug 2026' },
+              { label: 'Tower Crane Operator', status: 'valid', expiresAt: '15 Nov 2026' },
+              { label: 'OSHA 30-Hour',        status: 'valid', expiresAt: '15 Nov 2026' },
+              { label: 'Medical Fitness',      status: 'valid', expiresAt: '07 Apr 2027' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: Type 2 diabetes (diet-controlled).',
             upcomingShifts: [
@@ -391,10 +391,10 @@ const SITES: Site[] = [
               { start: 10.25, end: 14.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'NEBOSH IGC', status: 'valid' },
-              { label: 'First Aid/CPR', status: 'valid' },
-              { label: 'Fit-for-Duty (Feb 2026)', status: 'valid' },
+              { label: 'Emirates ID',           status: 'valid', expiresAt: '15 Jan 2028' },
+              { label: 'NEBOSH IGC',            status: 'valid', expiresAt: '01 Jan 2028' },
+              { label: 'First Aid/CPR',         status: 'valid', expiresAt: '01 Jun 2026' },
+              { label: 'Fit-for-Duty (Feb 2026)', status: 'valid', expiresAt: '01 Aug 2026' },
             ],
             medical: 'Clearance: Fully Fit.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -421,9 +421,9 @@ const SITES: Site[] = [
               { start: 10.0, end: 15.0, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'OSHA 30-Hour', status: 'valid' },
-              { label: 'Site Foreman Licence', status: 'valid' },
+              { label: 'Emirates ID',          status: 'valid', expiresAt: '01 Jun 2029' },
+              { label: 'OSHA 30-Hour',         status: 'valid', expiresAt: '15 Jun 2028' },
+              { label: 'Site Foreman Licence', status: 'valid', expiresAt: '01 Jun 2027' },
             ],
             medical: 'Clearance: Fully Fit.\nAllergies: Penicillin.\nPre-existing: None.',
             upcomingShifts: [
@@ -461,9 +461,9 @@ const SITES: Site[] = [
               { start: 11.0, end: 15.0, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Civil Engineering Degree', status: 'valid' },
-              { label: 'OSHA 30-Hour', status: 'valid' },
+              { label: 'Emirates ID',            status: 'valid', expiresAt: '20 Jun 2026' },
+              { label: 'Civil Engineering Degree', status: 'valid', expiresAt: '—' },
+              { label: 'OSHA 30-Hour',           status: 'valid', expiresAt: '20 Jun 2026' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: Mild iron-deficiency anaemia (supplement).',
             upcomingShifts: [
@@ -493,8 +493,8 @@ const SITES: Site[] = [
               { start: 11.0, end: 15.0, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Waterproofing Specialist Cert', status: 'valid' },
+              { label: 'Emirates ID',                  status: 'valid', expiresAt: '15 Mar 2027' },
+              { label: 'Waterproofing Specialist Cert', status: 'valid', expiresAt: '01 Aug 2027' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -520,9 +520,9 @@ const SITES: Site[] = [
               { start: 11.5, end: 15.0, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'NEBOSH IGC', status: 'valid' },
-              { label: 'ISO 45001 Lead Auditor', status: 'valid' },
+              { label: 'Emirates ID',          status: 'valid', expiresAt: '05 Sep 2028' },
+              { label: 'NEBOSH IGC',           status: 'valid', expiresAt: '20 Sep 2028' },
+              { label: 'ISO 45001 Lead Auditor', status: 'valid', expiresAt: '20 Sep 2026' },
             ],
             medical: 'Clearance: Fully Fit.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -553,9 +553,9 @@ const SITES: Site[] = [
               { start: 12.0, end: 16.0, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'MEP Project Management', status: 'valid' },
-              { label: 'OSHA 10-Hour', status: 'pending' },
+              { label: 'Emirates ID',            status: 'valid',   expiresAt: '10 Nov 2026' },
+              { label: 'MEP Project Management', status: 'valid',   expiresAt: '01 Mar 2027' },
+              { label: 'OSHA 10-Hour',           status: 'pending' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -581,8 +581,8 @@ const SITES: Site[] = [
               { start: 11.75, end: 16.0, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Plumbing Foreman Cert', status: 'valid' },
+              { label: 'Emirates ID',          status: 'valid', expiresAt: '05 Apr 2027' },
+              { label: 'Plumbing Foreman Cert', status: 'valid', expiresAt: '15 Jul 2026' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -620,9 +620,9 @@ const SITES: Site[] = [
               { start: 11.0, end: 15.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Facade Installation Cert', status: 'valid' },
-              { label: 'Working at Height', status: 'valid' },
+              { label: 'Emirates ID',             status: 'valid', expiresAt: '20 Jan 2028' },
+              { label: 'Facade Installation Cert', status: 'valid', expiresAt: '01 Oct 2026' },
+              { label: 'Working at Height',       status: 'valid', expiresAt: '01 Oct 2026' },
             ],
             medical: 'Clearance: Fully Fit.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -648,9 +648,9 @@ const SITES: Site[] = [
               { start: 10.5, end: 15.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Land Survey Licence', status: 'valid' },
-              { label: 'AutoCAD Certification', status: 'valid' },
+              { label: 'Emirates ID',         status: 'valid', expiresAt: '10 Mar 2027' },
+              { label: 'Land Survey Licence', status: 'valid', expiresAt: '20 Nov 2026' },
+              { label: 'AutoCAD Certification', status: 'valid', expiresAt: '01 Jan 2028' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -676,9 +676,9 @@ const SITES: Site[] = [
               { start: 10.5, end: 15.5, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Precast Installer Cert', status: 'valid' },
-              { label: 'First Aid/CPR', status: 'expired' },
+              { label: 'Emirates ID',         status: 'valid',   expiresAt: '25 Jul 2027' },
+              { label: 'Precast Installer Cert', status: 'valid', expiresAt: '10 Sep 2026' },
+              { label: 'First Aid/CPR',       status: 'expired', expiresAt: '01 Feb 2026' },
             ],
             medical: 'Clearance: Fit for Heavy Labour.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -713,8 +713,8 @@ const SITES: Site[] = [
               { start: 11.5, end: 16.0, type: 'working' },
             ],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'Painter & Decorator Cert', status: 'valid' },
+              { label: 'Emirates ID',              status: 'valid', expiresAt: '15 Oct 2026' },
+              { label: 'Painter & Decorator Cert', status: 'valid', expiresAt: '15 Oct 2026' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: Latex.\nPre-existing: None.',
             upcomingShifts: [
@@ -736,9 +736,9 @@ const SITES: Site[] = [
             shift: 'off_site', heatRisk: 'safe', heatIndex: 27.5, lastCheckin: '2 hr ago',
             schedule: [],
             certifications: [
-              { label: 'Emirates ID', status: 'valid' },
-              { label: 'ISO 9001 Lead Auditor', status: 'valid' },
-              { label: 'QC Inspector Cert', status: 'valid' },
+              { label: 'Emirates ID',           status: 'valid', expiresAt: '01 Feb 2028' },
+              { label: 'ISO 9001 Lead Auditor', status: 'valid', expiresAt: '15 Feb 2027' },
+              { label: 'QC Inspector Cert', status: 'valid', expiresAt: '15 Feb 2027' },
             ],
             medical: 'Clearance: Fit for Duty.\nAllergies: None.\nPre-existing: None.',
             upcomingShifts: [
@@ -1074,13 +1074,40 @@ function CertBadge({ cert }: { cert: Certification }) {
     expired: <AlertCircle className="w-3 h-3 flex-shrink-0" />,
     pending: <Clock className="w-3 h-3 flex-shrink-0" />,
   }
+  const tooltipBg = {
+    valid:   'bg-[#0C2A1F] text-[#00D15A]',
+    expired: 'bg-red-700 text-white',
+    pending: 'bg-amber-600 text-white',
+  }
+  function getTooltip() {
+    if (cert.status === 'pending')  return 'Renewal pending — not yet obtained'
+    if (!cert.expiresAt)            return null
+    if (cert.status === 'expired')  return `Expired ${cert.expiresAt} · Past expiry`
+    return `Expires ${cert.expiresAt}`
+  }
+  const tooltip = getTooltip()
   return (
     <span className={cn(
-      'inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[11px] font-semibold',
+      'relative group inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[11px] font-semibold cursor-default',
       styles[cert.status],
     )}>
       {icons[cert.status]}
       {cert.label}
+      {tooltip && (
+        <span className={cn(
+          'absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap',
+          'pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 shadow-lg',
+          tooltipBg[cert.status],
+        )}>
+          {tooltip}
+          <span className={cn(
+            'absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent',
+            cert.status === 'valid'   && 'border-t-[#0C2A1F]',
+            cert.status === 'expired' && 'border-t-red-700',
+            cert.status === 'pending' && 'border-t-amber-600',
+          )} />
+        </span>
+      )}
     </span>
   )
 }
