@@ -24,11 +24,25 @@ function getMessageText(msg: UIMessage): string {
 }
 
 function renderContent(content: string) {
-  return {
-    __html: content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br />'),
-  }
+  const linkStyle = 'color:#00D15A;font-weight:600;text-decoration:underline;cursor:pointer;'
+
+  const html = content
+    // **Name (HG-XXXX)** — badge inside bold → linked
+    .replace(
+      /\*\*([^*]*?HG-(\d{4})[^*]*?)\*\*/g,
+      `<a href="/dashboard/workers?worker=HG-$2" style="${linkStyle}">$1</a>`,
+    )
+    // **Name** (HG-XXXX) — badge after bold → linked
+    .replace(
+      /\*\*([^*]+)\*\*\s*\(HG-(\d{4})\)/g,
+      `<a href="/dashboard/workers?worker=HG-$2" style="${linkStyle}">$1 (HG-$2)</a>`,
+    )
+    // Remaining **bold**
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // Newlines
+    .replace(/\n/g, '<br />')
+
+  return { __html: html }
 }
 
 /* ── Message bubble ─────────────────────────────────────────────── */
@@ -244,7 +258,7 @@ export function AIChatbot() {
       {/* ── Tooltip bubble ─────────────────────────────────────────── */}
       <div
         className={cn(
-          'fixed bottom-[78px] right-5 z-50 transition-all duration-300 origin-bottom-right',
+          'fixed bottom-[78px] right-5 z-[9999] transition-all duration-300 origin-bottom-right',
           tooltip ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none',
         )}
       >
